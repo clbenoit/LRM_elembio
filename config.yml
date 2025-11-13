@@ -1,3 +1,27 @@
 default:
-  rhino_log_level: !expr Sys.getenv("RHINO_LOG_LEVEL", "INFO")
-  rhino_log_file: !expr Sys.getenv("RHINO_LOG_FILE", NA)
+  genome_version: "hg19"
+  app_prod: no
+  cache_directory: default
+  db_path: "app/data/testdata"
+  prefix: "testdb"
+  app_title: "My App"
+
+
+production:
+  genome_version: "hg19"
+  app_prod: no
+  cache_directory: default
+  db_path: "app/data/testdata"
+  prefix: "testdb"
+  app_title: "My App"
+
+
+demo:
+  genome_version: "hg19"
+  app_prod: no
+  cache_directory: default
+  db_path: "app/data/testdata"
+  prefix: "testdb"
+  app_title: "My App"
+
+
