@@ -2,10 +2,9 @@ box::use(
   R6[R6Class],
   shiny[reactiveValues, observeEvent, shinyOptions, req, reactive],
   RSQLite[SQLite],
-  dplyr[`%>%`, filter],
+  dplyr[`%>%`, filter, rename],
   stats[setNames],
   config[get],
-  #shinybusy[remove_modal_spinner, show_modal_spinner],
   DBI[dbReadTable, dbGetQuery, dbExistsTable, dbExecute, dbSendQuery],
   utils[read.table],
   shinybusy[remove_modal_spinner, show_modal_spinner],
@@ -16,43 +15,45 @@ appDataManager <- R6::R6Class(
   classname = "DataManager",
   public = list(
     con = NULL,
-    # selectors = reactiveValues(classes = "All" , subclasses = "All", cohorts = "All", chips = "All"),
-    # data = reactiveValues(current_samples_dataframe = NULL, annotations = NULL, BValsC = NULL, BValsC_V2 = NULL),
-    selectors = reactiveValues(),
-    data = reactiveValues(),
-    loadAppData = function(con) {
-      print("inside load DB")
-      self$con <- con
+    selectors = reactiveValues(analysis_name = NULL),
+    data = reactiveValues(template_settings = NULL, manifest_samples_info = NULL, manifest = NULL,
+                          correspondances = NULL, positions = NULL),
+    loadTemplates = function(analysis_name = NULL) {
+      print("load manifest templates")
+      req(analysis_name)
+      print('analysis name')
+      print(analysis_name)
       shinybusy::show_modal_spinner(
         spin = "double-bounce", color = "#112446",
-        text = "Loading database metadata")
+        text = "Loading data")
 
-      # Different sidebars according to selected tab
-      if (dbExistsTable(conn = con, "annotations")) {
-        print("Loading annotations")
-        self$data$annotations <- DBI::dbReadTable(conn = con, name = "annotations", check.names = FALSE)
-      } else {
-        print("Can't find BLABLA table in base, check you database")
+         if(analysis_name %in% c("TS65","Hema_M_L_CHUGA")){
+           kit_name <- "XT-HS2"
+         } else if (analysis_name %in% c("Myogre","Exomes")){
+           kit_name <- "XT-HS"
+         }
+
+        if (file.exists(paste0("app/data/Template_Settings_", kit_name, ".csv"))) {
+          print("Loading templates")
+
+         template_settings <- read.table(paste0("app/data/Template_Settings_", kit_name, ".csv"),
+                                sep = ',',
+                                header = TRUE,
+                                )[1:5,]  %>%
+           rename(COL1 = "X.SETTINGS.", COL2 = "X", COL3 = "X.1", COL4 = "X.2")
+
+         self$data$template_settings <- template_settings
       }
 
-      if (dbExistsTable(conn = con, "BValsC")) {
-        print("Loading V1 Beta values")
-        self$data$BValsC <- DBI::dbReadTable(conn = con, name = "BValsC", check.names = FALSE)
-      } else {
-        print("Can't find V1 beta values table in base, check you database")
+      if (file.exists(paste0("app/data/index_correspondances_", kit_name, ".csv"))) {
+        print("Loading correspondances")
+
+        correspondances <- read.table(paste0("app/data/index_correspondances_", kit_name, ".csv"),
+                                      sep = ',',
+                                      header = TRUE
+                                      )
+        self$data$correspondances <- correspondances
       }
-
-      if (dbExistsTable(conn = con, "BValsC_V2")) {
-        print("Loading V2 Beta values")
-        BValsC_V2 <- DBI::dbReadTable(conn = con, name = "BValsC_V2", check.names = FALSE)
-
-        rownames(BValsC_V2) <- BValsC_V2$cgID
-        BValsC_V2$cgID <- NULL
-        self$data$BValsC_V2 <- BValsC_V2
-      } else {
-        print("Can't find V2 beta values table in base, check you database")
-      }
-
       remove_modal_spinner()
     }
   )

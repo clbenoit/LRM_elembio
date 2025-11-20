@@ -4,3 +4,5 @@
 .Ruserdata
 *.Rproj
 renv/*
+app/data/testdata/*
+app/data/.~lock*
