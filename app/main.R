@@ -53,9 +53,12 @@ ui <- function(id) {
         #secondary = "#FF66FF",   # bleu
         secondary = "pink",
         primary = "#750787",     # violet,
-        base_font = bslib::font_google("Comic Neue"),
-        heading_font = bslib::font_google("Lobster")
+        # base_font = bslib::font_google("Comic Neue"),
+        # heading_font = bslib::font_google("Lobster"),
+        base_font = "Comic Neue",
+        heading_font = "Lobster"
       ),
+      tags$link(rel = "stylesheet", href = "styles/fonts.css"),
       # theme = bs_theme(bootswatch = "darkly",
       #                  # bg = "#FCFDFD",
       #                  # fg = "rgb(25, 125, 85)"
