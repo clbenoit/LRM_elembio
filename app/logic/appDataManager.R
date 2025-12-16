@@ -27,7 +27,7 @@ appDataManager <- R6::R6Class(
         spin = "double-bounce", color = "#112446",
         text = "Loading data")
 
-         if(analysis_name %in% c("TS65","Hema_M_L_CHUGA")){
+         if(analysis_name %in% c("TS65/GHEM-FFPE","Hema_M_L_CHUGA")){
            kit_name <- "XT-HS2"
          } else if (analysis_name %in% c("Myogre","Exomes")){
            kit_name <- "XT-HS"

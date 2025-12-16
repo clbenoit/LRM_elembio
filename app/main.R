@@ -31,10 +31,6 @@ ui <- function(id) {
   bootstrapPage(
     page_navbar(
       title = "LRM_elembio",
-      # theme = bs_theme(bootswatch = "cyborg",
-      #                  fg = "#FFFFFF",
-      #                  bg = "#000000"
-      #                  ),
       tags$style(shiny::HTML("
       .navbar {
           background: linear-gradient(to right, #E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787);
@@ -49,12 +45,8 @@ ui <- function(id) {
         warning = "#FF8C00", # orange
         success = "#FFED00",   # jaune
         info = "#008026",      # vert
-        #secondary = "#004DFF",   # bleu
-        #secondary = "#FF66FF",   # bleu
         secondary = "pink",
         primary = "#750787",     # violet,
-        # base_font = bslib::font_google("Comic Neue"),
-        # heading_font = bslib::font_google("Lobster"),
         base_font = "Comic Neue",
         heading_font = "Lobster"
       ),
@@ -67,9 +59,9 @@ ui <- function(id) {
       nav_panel(title = "Manifest Builder",
                 selectizeInput(ns("analysis_name"),
                                choices = c("Myogre","Exomes",
-                                           "TS65","Hema_M_L_CHUGA"),
+                                           "TS65/GHEM-FFPE","Hema_M_L_CHUGA"),
                                width = "100%",
-                               selected = "TS65",
+                               selected = "TS65/GHEM-FFPE",
                                label = "Sélecteur d'analyse"),
                 import_indexes$ui(ns("import_indexes"))),
       nav_panel(title = "Bases2Fastqs",
@@ -109,14 +101,7 @@ server <- function(id) {
       Sys.setenv(SHINYPROXY_USERNAME = "Me")
     }
 
-    ## load database ##
-    # db_name <- file.path(get("db_path"), paste0(get("prefix"), ".db"))
-    # print(paste0("db name :", db_name))
-    # con <- dbConnect(SQLite(), db_name)
-
     appDataManager <- appDataManager$new()
-    #observeEvent(appDataManager$selectors$analysis_name,{
-    #req(appDataManager$selectors$analysis_name)
     observeEvent(input$analysis_name,{
       req(input$analysis_name)
       print("observeer input$analysis_name")

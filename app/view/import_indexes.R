@@ -53,7 +53,7 @@ server <- function(id, con, appData, main_session) {
       SAMPLE_ID = character(1),
       SAMPLE_DESCRIPTION = character(1),
       WELL_ID = character(1),
-      LANE = "",  # nouvelle colonne vide ou valeur par défaut
+      LANE = "", 
       stringsAsFactors = FALSE
     )
 
@@ -62,18 +62,25 @@ server <- function(id, con, appData, main_session) {
 
     output$table_ui <- renderUI({
       table_version()
-      rHandsontableOutput(ns("table_input"))
+      shiny::div(
+        style = "
+          height: 300px;
+          overflow-y: auto;
+          border: 1px solid #ccc;
+          ", rHandsontableOutput(ns("table_input"))
+        )
     })
 
     output$table_input <- renderRHandsontable({
       rhandsontable(table_data(), rowHeaders = NULL, stretchH = "all") %>%
-        hot_col("SAMPLE_ID") %>%
-        hot_col("SAMPLE_DESCRIPTION") %>%
-        hot_col("WELL_ID") %>%
+        hot_col("SAMPLE_ID", width = 120) %>%
+        hot_col("SAMPLE_DESCRIPTION", width = 80) %>%
+        hot_col("WELL_ID", width = 120) %>%
         hot_col(
         "LANE",
         type = "dropdown",
-        source = c("1+2", "1", "2")
+        source = c("1+2", "1", "2"),
+        , width = 120
         #, strict = TRUE
       )
     })
@@ -82,7 +89,7 @@ server <- function(id, con, appData, main_session) {
       req(input$table_input)
 
       positions <- hot_to_r(input$table_input)
-      table_data(positions)  # Toujours mettre à jour reactiveVal
+      table_data(positions) 
 
       if (any(positions$SAMPLE_ID != "")) {
         valid_positions <- positions %>% filter(if_any(everything(), ~ trimws(.) != ""))
@@ -94,7 +101,6 @@ server <- function(id, con, appData, main_session) {
             text = HTML("Au moins un de vos échantillons contient un caractère spécial interdit ou un espace."),
             html = TRUE, type = "error"
           )
-
           appData$data$positions <- NULL
           appData$data$manifest_samples_info <- data.frame(
             SAMPLE_ID = "<span style='color:red; font-weight:bold;'>Vérifiez vos noms d'échantillons</span>",
@@ -116,7 +122,6 @@ server <- function(id, con, appData, main_session) {
         lane_values[is.na(lane_values)] <- ""  # NA devient vide pour le test
 
         if (any(!lane_values %in% c("1+2", "1", "2") & lane_values != "")) {
-          print("PASBON")
           sendSweetAlert(
             session = session,
             title = "Valeur de LANE invalide",
@@ -131,6 +136,40 @@ server <- function(id, con, appData, main_session) {
           return(NULL)
         }
       }
+      
+      if (!is.null(appData$data$positions)) {
+        if (!length(appData$data$positions$SAMPLE_ID) == length(unique(appData$data$positions$SAMPLE_ID))) {
+          sendSweetAlert(
+            session = session,
+            title = "Nom d'echantillon dupliqué",
+            text = HTML("Au moins un de vos noms d'echantillon est présent deux fois dans vos données d'entrées."),
+            html = TRUE,
+            type = "error"
+          )
+          
+          appData$data$positions <- NULL
+          appData$data$manifest_samples_info <- NULL
+          return(NULL)
+        }
+      }
+      
+      if (!is.null(appData$data$positions)) {
+        if (!length(appData$data$positions$WELL_ID) == length(unique(appData$data$positions$WELL_ID))) {
+          sendSweetAlert(
+            session = session,
+            title = "Nom de puit dupliqué",
+            text = HTML("Au moins un de vos noms de puits est présent deux fois dans vos données d'entrées."),
+            html = TRUE,
+            type = "error"
+          )
+          
+          appData$data$positions <- NULL
+          appData$data$manifest_samples_info <- NULL
+          return(NULL)
+        }
+      }
+      
+      
     })
 
     observeEvent(input$reset, {
@@ -142,11 +181,10 @@ server <- function(id, con, appData, main_session) {
     observeEvent(c(appData$data$positions, appData$data$correspondances), {
       req(appData$data$positions, appData$data$correspondances)
 
-      if(appData$selectors$analysis_name %in% c("TS65","Hema_M_L_CHUGA")){
+      if(appData$selectors$analysis_name %in% c("TS65/GHEM-FFPE","Hema_M_L_CHUGA")){
         manifest_samples_info <- data.table::setDT(
           appData$data$positions %>%
             left_join(appData$data$correspondances, by = "WELL_ID") %>%
-            #select(c("SAMPLE_ID","SEQUENCE"))
             select(c("SAMPLE_ID","SEQUENCE", "LANE"))
         )
 
@@ -162,8 +200,6 @@ server <- function(id, con, appData, main_session) {
         } else {
           manifest_samples_info <- manifest_samples_info %>%
             ungroup() #%>%
-
-        print(manifest_samples_info)
 
          manifest_samples_info <- manifest_samples_info %>%
             rename(COL1 = "SAMPLE_ID", COL2 = "Index1", COL3 = "Index2", COL4 = "LANE") %>%
@@ -183,8 +219,6 @@ server <- function(id, con, appData, main_session) {
         manifest_samples_info <- appData$data$positions %>%
           left_join(appData$data$correspondances, by = "WELL_ID")
 
-        print(manifest_samples_info)
-        print(unique(manifest_samples_info$SEQUENCE))
         if (length(unique(unique(manifest_samples_info$SEQUENCE))) == 1 && is.na(unique(manifest_samples_info$SEQUENCE))) {
           sendSweetAlert(session = session, title = "Aucun index trouvé !",
                          text = HTML("Êtes-vous sûr qu’au moins une des valeurs saisies dans la colonne WELL_ID correspond à celles attendues pour le kit XT-HS ?"),
@@ -192,17 +226,10 @@ server <- function(id, con, appData, main_session) {
           manifest_samples_info <- NULL
         } else {
           manifest_samples_info <- manifest_samples_info %>%
-            # select(c("SAMPLE_ID","SEQUENCE")) %>%
-            # rename(COL1 = "SAMPLE_ID", COL2 = "SEQUENCE") #%>%
             select(c("SAMPLE_ID","SEQUENCE", "LANE")) %>%
             rename(COL1 = "SAMPLE_ID", COL2 = "SEQUENCE", COL3 = "LANE") #%>%
 
-
-
-          print(manifest_samples_info)
-
           manifest_samples_info <- manifest_samples_info %>%
-            #mutate(COL3 = "1+2") %>%
             add_row(COL1 = "PhiX", COL2 = "ATGTCGCT", COL3 = "1+2", .before = 1) %>%
             add_row(COL1 = "PhiX", COL2 = "CACAGATC", COL3 = "1+2", .before = 1) %>%
             add_row(COL1 = "PhiX", COL2 = "GCACATAG", COL3 = "1+2", .before = 1) %>%
@@ -235,12 +262,23 @@ server <- function(id, con, appData, main_session) {
         )
       }
     )
-
+    
     output$preview_table <- renderDT({
-      req(appData$data$manifest_samples_info)
-      datatable(appData$data$manifest_samples_info %>%
-                  filter(COL1 != "PhiX"), rownames = FALSE, escape = FALSE)
-    })
+        req(appData$data$manifest_samples_info)
+        preview_table <- appData$data$manifest_samples_info %>%
+          filter(COL1 != "PhiX")  %>%
+          {
+            colnames(.) <- as.character(.[2, ])
+            .
+          } %>%
+          slice(-(1:2))
+    },
+    options = list(
+      autoWidth = FALSE,
+      columnDefs = list(
+        list(width = "60px", targets = 0, className = "dt-center")
+      )
+    ))
 
   })
 }
