@@ -2,7 +2,7 @@
 
 box::use(
   shiny[h3, moduleServer, tagList, NS, br, fluidRow, column, tags,
-        downloadButton, downloadHandler, req, observeEvent,uiOutput,
+        downloadButton, downloadHandler, req, observeEvent,uiOutput, div,
         textAreaInput, actionButton, dataTableOutput, HTML, reactiveVal, renderUI],
   DT[renderDT, datatable],
   dplyr[filter, `%>%`, select, case_when, mutate, arrange, inner_join, rename,
@@ -62,27 +62,25 @@ server <- function(id, con, appData, main_session) {
 
     output$table_ui <- renderUI({
       table_version()
-      shiny::div(
-        style = "
-          height: 300px;
-          overflow-y: auto;
-          border: 1px solid #ccc;
-          ", rHandsontableOutput(ns("table_input"))
-        )
+        rHandsontableOutput(ns("table_input"))
     })
 
     output$table_input <- renderRHandsontable({
-      rhandsontable(table_data(), rowHeaders = NULL, stretchH = "all") %>%
+      rhandsontable(
+        table_data(),
+        rowHeaders = NULL,
+        stretchH = "all",
+        height = 400
+      ) %>%
         hot_col("SAMPLE_ID", width = 120) %>%
         hot_col("SAMPLE_DESCRIPTION", width = 80) %>%
         hot_col("WELL_ID", width = 120) %>%
         hot_col(
-        "LANE",
-        type = "dropdown",
-        source = c("1+2", "1", "2"),
-        , width = 120
-        #, strict = TRUE
-      )
+          "LANE",
+          type = "dropdown",
+          source = c("1+2", "1", "2"),
+          width = 120
+        )
     })
 
     observeEvent(input$table_input, {
