@@ -15,7 +15,7 @@ appDataManager <- R6::R6Class(
   classname = "DataManager",
   public = list(
     con = NULL,
-    selectors = reactiveValues(analysis_name = NULL),
+    selectors = reactiveValues(analysis_name = NULL, num_rows = NULL, generate_rows = NULL),
     data = reactiveValues(template_settings = NULL, manifest_samples_info = NULL, manifest = NULL,
                           correspondances = NULL, positions = NULL),
     loadTemplates = function(analysis_name = NULL) {

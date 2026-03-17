@@ -1,6 +1,7 @@
 box::use(
-  shiny[bootstrapPage, div, moduleServer, NS, renderUI, tags, uiOutput,
-        shinyOptions, p , icon, observeEvent, selectizeInput, req],
+  shiny[bootstrapPage, div, moduleServer, NS, renderUI, tags, uiOutput, numericInput,
+        shinyOptions, p , icon, observeEvent, selectizeInput, req, fluidRow, column,
+        br, actionButton],
   config[get],
   cachem[cache_disk],
   DBI[dbConnect],
@@ -57,13 +58,43 @@ ui <- function(id) {
       #
       underline = TRUE,
       nav_panel(title = "Manifest Builder",
-                selectizeInput(ns("analysis_name"),
-                               choices = c("Myogre","Exomes",
-                                           "TS65/GHEM-FFPE","Hema_M_L_CHUGA"),
-                               width = "100%",
-                               selected = "TS65/GHEM-FFPE",
-                               label = "Sélecteur d'analyse"),
-                import_indexes$ui(ns("import_indexes"))),
+                fluidRow(
+                  column(
+                    width = 4, 
+                    selectizeInput(
+                      ns("analysis_name"),
+                      label = "Analysis selector", # Traduit: "Sélecteur d'analyse"
+                      choices = c("Myogre", "Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA"),
+                      selected = "TS65/GHEM-FFPE",
+                      width = "100%"
+                    )
+                  ),
+                  column(
+                    width = 4, 
+                    numericInput(
+                      ns("num_rows"), 
+                      label = "Number of rows:", # Traduit: "Nombre de lignes :"
+                      value = 8, 
+                      min = 1, 
+                      max = 112, 
+                      width = "100%"
+                    )
+                  ),
+                  column(
+                    width = 4, 
+                    br(), 
+                    actionButton(
+                      ns("generate_rows"), 
+                      label = "Apply", # Déjà en anglais dans votre snippet
+                      class = "btn-primary", 
+                      width = "100%"
+                    )
+                  )
+                ),
+                div(
+                  style = "padding-bottom: 25px;",
+                fluidRow(import_indexes$ui(ns("import_indexes")))),
+      ),
       nav_panel(title = "Bases2Fastqs",
                 p("Coming soon")),
       nav_spacer(),
@@ -107,6 +138,13 @@ server <- function(id) {
       print("observeer input$analysis_name")
       appDataManager$selectors$analysis_name <- input$analysis_name
       appDataManager$loadTemplates(analysis_name = appDataManager$selectors$analysis_name)
+    })
+    observeEvent(input$generate_rows,{
+      req(input$generate_rows)
+      req(input$num_rows)
+      print("observeer input$generate_rows")
+      appDataManager$selectors$num_rows <- input$num_rows
+      appDataManager$selectors$generate_rows <- input$generate_rows
     })
 
     import_indexes$server("import_indexes", appData = appDataManager, main_session = session)
