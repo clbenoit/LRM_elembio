@@ -31,8 +31,9 @@ appDataManager <- R6::R6Class(
            kit_name <- "XT-HS2"
          } else if (analysis_name %in% c("Myogre","Exomes")){
            kit_name <- "XT-HS"
+         } else if (analysis_name %in% c("Hedera")){
+          kit_name <- "Hedera"
          }
-
         if (file.exists(paste0("app/data/Template_Settings_", kit_name, ".csv"))) {
           print("Loading templates")
 

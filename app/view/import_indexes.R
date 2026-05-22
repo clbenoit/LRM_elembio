@@ -216,7 +216,7 @@ server <- function(id, con, appData, main_session) {
     observeEvent(c(appData$data$positions, appData$data$correspondances), {
       req(appData$data$positions, appData$data$correspondances)
       
-      if(appData$selectors$analysis_name %in% c("TS65/GHEM-FFPE","Hema_M_L_CHUGA")){
+      if(appData$selectors$analysis_name %in% c("TS65/GHEM-FFPE","Hema_M_L_CHUGA","Hedera")){
         manifest_samples_info <- data.table::setDT(
           appData$data$positions %>%
             left_join(appData$data$correspondances, by = "WELL_ID") %>%
@@ -237,16 +237,29 @@ server <- function(id, con, appData, main_session) {
           manifest_samples_info <- manifest_samples_info %>%
             ungroup() #%>%
           
-          manifest_samples_info <- manifest_samples_info %>%
-            rename(COL1 = "SAMPLE_ID", COL2 = "Index1", COL3 = "Index2", COL4 = "LANE") %>%
-            select(COL1,COL2,COL3,COL4) %>%
-            #mutate(COL4 = "1+2") %>%
-            add_row(COL1 = "PhiX", COL2 = "ATGTCGCT", COL3 = "CTAGCTCG", COL4 = "1+2", .before = 1) %>%
-            add_row(COL1 = "PhiX", COL2 = "CACAGATC", COL3 = "ACGAGAGT", COL4 = "1+2", .before = 1) %>%
-            add_row(COL1 = "PhiX", COL2 = "GCACATAG", COL3 = "GACTACTA", COL4 = "1+2", .before = 1) %>%
-            add_row(COL1 = "PhiX", COL2 = "TGTGTCGA", COL3 = "TGTCTGAC", COL4 = "1+2", .before = 1) %>%
-            add_row(COL1 = "SampleName", COL2 = "Index1", COL3 = "Index2", COL4 = "Lane", .before = 1) %>%
-            add_row(COL1 = "[SAMPLES]", .before = 1)
+          if(appData$selectors$analysis_name == "Hedera"){
+            manifest_samples_info <- manifest_samples_info %>%
+              rename(COL1 = "SAMPLE_ID", COL2 = "Index1", COL3 = "Index2", COL4 = "LANE") %>%
+              select(COL1,COL2,COL3,COL4) %>%
+              #mutate(COL4 = "1+2") %>%
+              add_row(COL1 = "PhiX", COL2 = "ATGTCGCTAG", COL3 = "CTAGCTCGTA", COL4 = "1+2", .before = 1) %>%
+              add_row(COL1 = "PhiX", COL2 = "CACAGATCGT", COL3 = "ACGAGAGTCT", COL4 = "1+2", .before = 1) %>%
+              add_row(COL1 = "PhiX", COL2 = "GCACATAGTC", COL3 = "GACTACTAGC", COL4 = "1+2", .before = 1) %>%
+              add_row(COL1 = "PhiX", COL2 = "TGTGTCGACA", COL3 = "TGTCTGACAG", COL4 = "1+2", .before = 1) %>%
+              add_row(COL1 = "SampleName", COL2 = "Index1", COL3 = "Index2", COL4 = "Lane", .before = 1) %>%
+              add_row(COL1 = "[SAMPLES]", .before = 1)
+          } else {
+            manifest_samples_info <- manifest_samples_info %>%
+              rename(COL1 = "SAMPLE_ID", COL2 = "Index1", COL3 = "Index2", COL4 = "LANE") %>%
+              select(COL1,COL2,COL3,COL4) %>%
+              #mutate(COL4 = "1+2") %>%
+              add_row(COL1 = "PhiX", COL2 = "ATGTCGCT", COL3 = "CTAGCTCG", COL4 = "1+2", .before = 1) %>%
+              add_row(COL1 = "PhiX", COL2 = "CACAGATC", COL3 = "ACGAGAGT", COL4 = "1+2", .before = 1) %>%
+              add_row(COL1 = "PhiX", COL2 = "GCACATAG", COL3 = "GACTACTA", COL4 = "1+2", .before = 1) %>%
+              add_row(COL1 = "PhiX", COL2 = "TGTGTCGA", COL3 = "TGTCTGAC", COL4 = "1+2", .before = 1) %>%
+              add_row(COL1 = "SampleName", COL2 = "Index1", COL3 = "Index2", COL4 = "Lane", .before = 1) %>%
+              add_row(COL1 = "[SAMPLES]", .before = 1)
+          }
           
           appData$data$manifest_samples_info <- manifest_samples_info
         }
