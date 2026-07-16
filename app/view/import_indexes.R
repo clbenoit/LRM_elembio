@@ -249,14 +249,23 @@ server <- function(id, con, appData, main_session) {
               add_row(COL1 = "SampleName", COL2 = "Index1", COL3 = "Index2", COL4 = "Lane", .before = 1) %>%
               add_row(COL1 = "[SAMPLES]", .before = 1)
           } else {
+            
+            
+            print("nanani")
+            print(utils::head(manifest_samples_info))
+            
             manifest_samples_info <- manifest_samples_info %>%
               rename(COL1 = "SAMPLE_ID", COL2 = "Index1", COL3 = "Index2", COL4 = "LANE") %>%
               select(COL1,COL2,COL3,COL4) %>%
               #mutate(COL4 = "1+2") %>%
-              add_row(COL1 = "PhiX", COL2 = "ATGTCGCT", COL3 = "CTAGCTCG", COL4 = "1+2", .before = 1) %>%
-              add_row(COL1 = "PhiX", COL2 = "CACAGATC", COL3 = "ACGAGAGT", COL4 = "1+2", .before = 1) %>%
-              add_row(COL1 = "PhiX", COL2 = "GCACATAG", COL3 = "GACTACTA", COL4 = "1+2", .before = 1) %>%
-              add_row(COL1 = "PhiX", COL2 = "TGTGTCGA", COL3 = "TGTCTGAC", COL4 = "1+2", .before = 1) %>%
+              add_row(COL1 = "PhiX", COL2 = "ATGTCGCT", COL3 = "CTAGCTCG", COL4 = "1+2") %>%
+              add_row(COL1 = "PhiX", COL2 = "CACAGATC", COL3 = "ACGAGAGT", COL4 = "1+2") %>%
+              add_row(COL1 = "PhiX", COL2 = "GCACATAG", COL3 = "GACTACTA", COL4 = "1+2") %>%
+              add_row(COL1 = "PhiX", COL2 = "TGTGTCGA", COL3 = "TGTCTGAC", COL4 = "1+2") %>%
+              # add_row(COL1 = "PhiX", COL2 = "ATGTCGCT", COL3 = "CTAGCTCG", COL4 = "1+2", .before = 1) %>%
+              # add_row(COL1 = "PhiX", COL2 = "CACAGATC", COL3 = "ACGAGAGT", COL4 = "1+2", .before = 1) %>%
+              # add_row(COL1 = "PhiX", COL2 = "GCACATAG", COL3 = "GACTACTA", COL4 = "1+2", .before = 1) %>%
+              # add_row(COL1 = "PhiX", COL2 = "TGTGTCGA", COL3 = "TGTCTGAC", COL4 = "1+2", .before = 1) %>%
               add_row(COL1 = "SampleName", COL2 = "Index1", COL3 = "Index2", COL4 = "Lane", .before = 1) %>%
               add_row(COL1 = "[SAMPLES]", .before = 1)
           }
