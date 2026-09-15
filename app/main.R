@@ -64,7 +64,8 @@ ui <- function(id) {
                     selectizeInput(
                       ns("analysis_name"),
                       label = "Analysis selector", # Traduit: "Sélecteur d'analyse"
-                      choices = c("Myogre", "Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA", "Hedera"),
+                      #choices = c("Myogre", "Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA", "Hedera"),
+                      choices = c("Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA", "Hedera"),
                       selected = "TS65/GHEM-FFPE",
                       width = "100%"
                     )
