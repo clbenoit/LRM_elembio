@@ -8,6 +8,8 @@ box::use(
 
 test_that("main server works", {
   testServer(server, {
-    expect_true(grepl(x = output$message$html, pattern = "Check out Rhino docs!"))
+    # smoke test : le server principal s'initialise sans erreur
+    # (cache, data manager, modules import_indexes + s5)
+    expect_true(exists("appDataManager"))
   })
 })

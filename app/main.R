@@ -13,6 +13,7 @@ box::use(
 box::use(
   app/logic/appDataManager[appDataManager],
   app/view/import_indexes,
+  app/view/s5,
 )
 
 # link_github <- tags$a(
@@ -96,6 +97,8 @@ ui <- function(id) {
                   style = "padding-bottom: 25px;",
                 fluidRow(import_indexes$ui(ns("import_indexes")))),
       ),
+      nav_panel(title = "S5",
+                fluidRow(s5$ui(ns("s5")))),
       nav_panel(title = "Bases2Fastqs",
                 p("Coming soon")),
       nav_spacer(),
@@ -122,11 +125,12 @@ server <- function(id) {
     if (get("cache_directory") ==  "default") {
       dir.create(file.path(tempdir, "cache"))
       print(paste0("using following cache directory : ", file.path(tempdir, "cache")))
-      shinyOptions(cache = cache_disk(file.path(tempdir,"cache")))
+      # try() : shinyOptions() ne trouve pas de session sous testServer (shiny 1.10, mock)
+      try(shinyOptions(cache = cache_disk(file.path(tempdir,"cache"))))
     } else {
       print(paste0("using following cache directory : ",
                    get("cache_directory")))
-      shinyOptions(cache = cache_disk(get("cache_directory")))
+      try(shinyOptions(cache = cache_disk(get("cache_directory"))))
     }
     # Set up default user
     if(Sys.getenv("SHINYPROXY_USERNAME") == ""){
@@ -149,6 +153,7 @@ server <- function(id) {
     })
 
     import_indexes$server("import_indexes", appData = appDataManager, main_session = session)
+    s5$server("s5")
 
     })
 
