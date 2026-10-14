@@ -1,68 +1,82 @@
 #app/logic/s5_parser.R
-# Parsing / validation / construction du manifest S5 (fonctions pures, testables).
+# Validation / construction du manifest RNASeq_S5 (fonctions pures, testables).
 
-#' Parse un input S5 collé (N lignes `<CTRL> <BC> <SAMPLE_ID> <NOM>`, espaces).
-#' Pur (pas de Shiny) : renvoie les lignes valides + un vecteur d'erreurs lues.
+#' Valide un tableau S5 (colonnes ANALYSIS_TYPE, BC_NUMBER, SAMPLE_ID, PATIENT_ID, REPASSE).
+#' Pur (pas de Shiny) : normalise le type d'analyse et collecte les erreurs lues.
 #'
-#' Normalisation CTRL (case-insensitive) :
+#' Normalisation ANALYSIS_TYPE (case-insensitive) :
 #'   - minuscules -> majuscules (`pan` -> `PAN`)
 #'   - caracteres en plus -> troncature aux 3 premiers (`PANTAL` -> `PAN`)
 #' Erreurs collectees (blockent le download) :
-#'   - ligne non vide != 4 champs (message avec numero de ligne)
-#'   - CTRL ne demarrant ni par PAN ni par CTL
-#'   - BC duplique entre lignes
+#'   - ANALYSIS_TYPE vide ou ne demarrant ni par PAN ni par CTL (message avec numero de ligne)
+#'   - BC_NUMBER vide sur une ligne partiellement remplie (message avec numero de ligne)
+#'   - BC_NUMBER duplique entre lignes
 #'   - SAMPLE_ID duplique entre lignes
+#' Les lignes entierement vides sont ignorees (NA = cellule vide handsontable).
+#' La colonne REPASSE (checkbox) est normalisee : TRUE (cochee) -> "REPASSE",
+#' FALSE/NA -> "".
 #'
-#' @param text character (1) brut du textarea
-#' @return list(data = data.frame(CTRL, BC, SAMPLE_ID, NOM, row_number),
+#' @param df data.frame aux colonnes S5 (NA = cellule vide, REPASSE logique)
+#' @return list(data = data.frame normalise (lignes non vides, REPASSE = "" ou "REPASSE"),
 #'              errors = character())
-parse_s5_input <- function(text) {
-  lines <- trimws(gsub("\r$", "", strsplit(text, "\n")[[1]]))
-  rows <- vector("list")
+parse_s5_table <- function(df) {
+  # Robustesse : df sans colonnes S5 (payload de schema heterogene) -> erreur
+  # explicite au lieu d'un crash (le branchement Shiny filtre deja, c'est
+  # une derniere garde).
+  missing <- setdiff(
+    c("ANALYSIS_TYPE", "BC_NUMBER", "SAMPLE_ID", "PATIENT_ID"),
+    colnames(df)
+  )
+  if (length(missing) > 0) {
+    return(list(data = df[0, , drop = FALSE],
+                errors = paste0(
+                  "Schema inattendu : colonnes manquantes (",
+                  paste(missing, collapse = ", "), ")")))
+  }
+  df <- as.data.frame(lapply(df, function(x) {
+    v <- as.character(x)
+    v[is.na(v)] <- ""
+    trimws(v)
+  }))
+  empty <- rowSums(df != "") == 0
+
+  at <- toupper(df$ANALYSIS_TYPE)
+  known <- startsWith(at, "PAN") | startsWith(at, "CTL")
+  at[known] <- substr(at[known], 1, 3)
+
   errors <- character(0)
-
-  for (i in seq_along(lines)) {
-    if (!nzchar(lines[i])) next
-    fields <- strsplit(trimws(lines[i]), "\\s+")[[1]]
-    fields <- fields[nzchar(fields)]
-    if (length(fields) != 4) {
+  bad_type <- which(!empty & !known)
+  for (i in bad_type) {
+    if (df$ANALYSIS_TYPE[i] == "") {
+      errors <- c(errors, paste0("Ligne ", i, " : ANALYSIS_TYPE vide"))
+    } else {
       errors <- c(errors, paste0(
-        "Ligne ", i, " : 4 champs attendus (CTRL BC SAMPLE_ID NOM), ",
-        length(fields), " trouves"))
-      next
-    }
-    ctrl <- toupper(fields[1])
-    if (!startsWith(ctrl, "PAN") && !startsWith(ctrl, "CTL")) {
-      errors <- c(errors, paste0(
-        "Ligne ", i, " : type de controle inconnu ('", fields[1],
+        "Ligne ", i, " : type d'analyse inconnu ('", df$ANALYSIS_TYPE[i],
         "') - doit demarrer par PAN ou CTL"))
-      next
     }
-    rows[[length(rows) + 1]] <- data.frame(
-      CTRL = substr(ctrl, 1, 3),
-      BC = fields[2],
-      SAMPLE_ID = fields[3],
-      NOM = fields[4],
-      row_number = i,
-      stringsAsFactors = FALSE
-    )
+  }
+  bad_bc <- which(!empty & df$BC_NUMBER == "")
+  for (i in bad_bc) {
+    errors <- c(errors, paste0("Ligne ", i, " : BC_NUMBER vide"))
   }
 
-  data <- if (length(rows)) {
-    do.call(rbind, rows)
-  } else {
-    data.frame(
-      CTRL = character(0), BC = character(0), SAMPLE_ID = character(0),
-      NOM = character(0), row_number = numeric(0), stringsAsFactors = FALSE
-    )
-  }
+  data <- df[!empty, , drop = FALSE]
+  if (is.null(data$REPASSE)) data$REPASSE <- rep("", nrow(data))
+  data$ANALYSIS_TYPE <- at[!empty]
+  # checkbox REPASSE : TRUE (coche) -> "REPASSE" ; FALSE/NA -> "" (robuste aussi
+  # a l'ancien format texte "REPASSE")
+  data$REPASSE <- ifelse(data$REPASSE %in% c("TRUE", "REPASSE"), "REPASSE", "")
+  rownames(data) <- NULL
 
   if (nrow(data) > 0) {
-    dup_bc <- unique(data$BC[duplicated(data$BC)])
+    bc_ne <- data$BC_NUMBER[data$BC_NUMBER != ""]
+    dup_bc <- unique(bc_ne[duplicated(bc_ne)])
     if (length(dup_bc)) {
-      errors <- c(errors, paste0("BC duplique : ", paste(dup_bc, collapse = ", ")))
+      errors <- c(errors,
+                  paste0("BC_NUMBER duplique : ", paste(dup_bc, collapse = ", ")))
     }
-    dup_id <- unique(data$SAMPLE_ID[duplicated(data$SAMPLE_ID)])
+    sid_ne <- data$SAMPLE_ID[data$SAMPLE_ID != ""]
+    dup_id <- unique(sid_ne[duplicated(sid_ne)])
     if (length(dup_id)) {
       errors <- c(errors,
                   paste0("SAMPLE_ID duplique : ", paste(dup_id, collapse = ", ")))
@@ -73,23 +87,23 @@ parse_s5_input <- function(text) {
 }
 
 #' Construit les lignes de donnees du manifest Ion v2.3 RNA.
-#' Sample Name = `<SAMPLE_ID> <NOM[1:3] en majuscules> <CTRL>` (+ " REPASSE").
+#' Sample Name = `<SAMPLE_ID> <PATIENT_ID[1:3] en majuscules> <ANALYSIS_TYPE>` (+ " REPASSE").
 #'
-#' @param data resultat de parse_s5_input()$data
-#' @param repasse logical(nrow(data)) : flag REPASSE par ligne (NA/TRUE/FALSE)
+#' @param data resultat de parse_s5_table()$data
 #' @return data.frame 9 colonnes Ion (sans les 2 lignes de header)
-build_s5_manifest <- function(data, repasse) {
+build_s5_manifest <- function(data) {
   n <- nrow(data)
   sample_names <- character(n)
   for (i in seq_len(n)) {
-    nom_abbr <- toupper(substr(data$NOM[i], 1, min(3, nchar(data$NOM[i]))))
-    sample_names[i] <- paste(data$SAMPLE_ID[i], nom_abbr, data$CTRL[i])
-    if (isTRUE(repasse[i])) {
+    pat_abbr <- toupper(substr(data$PATIENT_ID[i], 1, min(3, nchar(data$PATIENT_ID[i]))))
+    sample_names[i] <- gsub("\\s+", " ",
+                            paste(data$SAMPLE_ID[i], pat_abbr, data$ANALYSIS_TYPE[i]))
+    if (data$REPASSE[i] == "REPASSE") {
       sample_names[i] <- paste(sample_names[i], "REPASSE")
     }
   }
   data.frame(
-    Barcode = paste0("Ion_V2_RBC1_BC", data$BC),
+    Barcode = paste0("Ion_V2_RBC1_BC", data$BC_NUMBER),
     `Control Type` = "",
     `Sample Name (required)` = sample_names,
     `Sample ID` = "",
@@ -101,6 +115,24 @@ build_s5_manifest <- function(data, repasse) {
     stringsAsFactors = FALSE,
     check.names = FALSE
   )
+}
+
+#' Data.frame complet du CSV Ion (2 lignes d'entete + lignes de donnees).
+#'
+#' @param data resultat de parse_s5_table()$data
+#' @return data.frame 9 colonnes Ion (2 lignes d'entete incluses, NA = cellule vide)
+build_s5_manifest_df <- function(data) {
+  manifest <- build_s5_manifest(data)
+  hdr2 <- c("Barcode", "Control Type", "Sample Name (required)", "Sample ID",
+            "Sample Description", "DNA/RNA/Fusions", "Reference library",
+            "Target regions BED file", "Hotspot regions BED file")
+  hdr1 <- c("CSV Version (required)", "2.3", rep(NA_character_, 7))
+  hdr_df <- data.frame(
+    matrix(c(hdr1, hdr2), nrow = 2, byrow = TRUE),
+    check.names = FALSE, stringsAsFactors = FALSE
+  )
+  colnames(hdr_df) <- colnames(manifest)
+  rbind(hdr_df, manifest)
 }
 
 #' Lignes completes du CSV a telecharger (2 lignes de header + donnees).

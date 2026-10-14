@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Conventions for agents working in this repo (Rhino Shiny app, LRM_elembio).
+Conventions for agents working in this repo (Rhino Shiny app, LRM_CHUGA).
 
 ## This repo
 

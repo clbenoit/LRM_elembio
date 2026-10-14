@@ -33,6 +33,9 @@ appDataManager <- R6::R6Class(
            kit_name <- "XT-HS"
          } else if (analysis_name %in% c("Hedera")){
           kit_name <- "Hedera"
+         } else if (analysis_name == "RNASeq_S5") {
+          # Pas de template/kit : le manifest Ion est genere depuis le tableau S5
+          kit_name <- NULL
          }
         if (file.exists(paste0("app/data/Template_Settings_", kit_name, ".csv"))) {
           print("Loading templates")

@@ -13,12 +13,11 @@ box::use(
 box::use(
   app/logic/appDataManager[appDataManager],
   app/view/import_indexes,
-  app/view/s5,
 )
 
 # link_github <- tags$a(
 #   icon("github"),"Code",
-#   href = "https://github.com/clbenoit/LRM_elembio",
+#   href = "https://github.com/clbenoit/LRM_CHUGA",
 #   target = "_blank"
 # )
 # link_doc <- tags$a(
@@ -32,7 +31,7 @@ ui <- function(id) {
   ns <- NS(id)
   bootstrapPage(
     page_navbar(
-      title = "LRM_elembio",
+      title = "LRM_CHUGA",
       tags$style(shiny::HTML("
       .navbar {
           background: linear-gradient(to right, #E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787);
@@ -66,7 +65,8 @@ ui <- function(id) {
                       ns("analysis_name"),
                       label = "Analysis selector", # Traduit: "Sélecteur d'analyse"
                       #choices = c("Myogre", "Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA", "Hedera"),
-                      choices = c("Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA", "Hedera"),
+                      choices = c("Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA", "Hedera",
+                                   "RNASeq_S5"),
                       selected = "TS65/GHEM-FFPE",
                       width = "100%"
                     )
@@ -97,8 +97,6 @@ ui <- function(id) {
                   style = "padding-bottom: 25px;",
                 fluidRow(import_indexes$ui(ns("import_indexes")))),
       ),
-      nav_panel(title = "S5",
-                fluidRow(s5$ui(ns("s5")))),
       nav_panel(title = "Bases2Fastqs",
                 p("Coming soon")),
       nav_spacer(),
@@ -142,6 +140,7 @@ server <- function(id) {
       req(input$analysis_name)
       print("observeer input$analysis_name")
       appDataManager$selectors$analysis_name <- input$analysis_name
+      appDataManager$selectors$num_rows <- input$num_rows
       appDataManager$loadTemplates(analysis_name = appDataManager$selectors$analysis_name)
     })
     observeEvent(input$generate_rows,{
@@ -153,7 +152,6 @@ server <- function(id) {
     })
 
     import_indexes$server("import_indexes", appData = appDataManager, main_session = session)
-    s5$server("s5")
 
     })
 
