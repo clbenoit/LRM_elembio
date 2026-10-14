@@ -2,6 +2,7 @@ box::use(
   shiny[bootstrapPage, div, moduleServer, NS, renderUI, tags, uiOutput, numericInput,
         shinyOptions, p , icon, observeEvent, selectizeInput, req, fluidRow, column,
         br, actionButton],
+  stats[runif],
   config[get],
   cachem[cache_disk],
   DBI[dbConnect],
@@ -12,6 +13,7 @@ box::use(
 
 box::use(
   app/logic/appDataManager[appDataManager],
+  app/logic/season_theme[active_season],
   app/view/import_indexes,
 )
 
@@ -26,17 +28,39 @@ box::use(
 #   target = "_blank"
 # )
 
+# Couche d'animation de saison (spans generes) — CSS dans app/logic/season_theme.R.
+# NULL hors saison (div .lrm-fx vide = invisible, pointer-events:none cote CSS).
+lrm_fx_spans <- function(season) {
+  if (is.null(season) || is.null(season$fx)) return(NULL)
+  fx <- season$fx
+  lapply(seq_len(fx$n), function(i) {
+    common <- paste0(
+      "font-size:", round(runif(1, 14, 30)), "px;",
+      "animation-duration:", round(runif(1, 8, 16), 1), "s;",
+      "animation-delay:", round(-runif(1, 0, 16), 1), "s;")
+    pos <- if (fx$anim == "swim") {
+      paste0("top:", round(runif(1, 15, 85)), "%;")
+    } else {
+      paste0("left:", round(runif(1, 0, 100)), "vw;")
+    }
+    tags$span(style = paste0(pos, common), sample(fx$emojis, 1))
+  })
+}
+
 #' @export
 ui <- function(id) {
   ns <- NS(id)
+  # Saison active (re-évaluée par session) — app/logic/season_theme.R
+  season <- active_season()
   bootstrapPage(
     page_navbar(
-      title = "LRM_CHUGA",
+      title = if (is.null(season)) "LRM_CHUGA" else paste0(season$emoji, " LRM_CHUGA"),
       tags$style(shiny::HTML("
       .navbar {
           background: linear-gradient(to right, #E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787);
         }
       ")),
+      tags$style(shiny::HTML(if (is.null(season)) "" else season$css)),
       theme = bs_theme(
         bootswatch = "flatly",
         #bootswatch = "minty",
@@ -58,6 +82,7 @@ ui <- function(id) {
       #
       underline = TRUE,
       nav_panel(title = "Manifest Builder",
+                tags$div(class = "lrm-fx", lrm_fx_spans(season)),
                 fluidRow(
                   column(
                     width = 4, 
