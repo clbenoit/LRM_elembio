@@ -17,8 +17,20 @@ describe('seasonal ui (LRM_SEASON=noel)', () => {
     })
   })
 
-  it('couche d\'animation (neige) présente dans le DOM', () => {
+  it('couche d\'animation (flocons, cadeaux, peres Noel) presente dans le DOM', () => {
     cy.get('.lrm-fx span').should('have.length.gte', 5)
+    cy.get('.lrm-fx')
+      .should('contain.text', '❄️')
+      .and('contain.text', '🎁')
+      .and('contain.text', '🎅')
+      .and('not.contain.text', '🌨️')
+  })
+
+  it('animations masquées après 10 secondes (timer de page)', () => {
+    cy.get('.lrm-fx span').should('have.length.gte', 5)
+    cy.get('.lrm-fx').should('have.css', 'display', 'block')
+    cy.wait(10500)
+    cy.get('.lrm-fx').should('have.css', 'display', 'none')
   })
 
   it('navbar recolorée (fond de saison)', () => {

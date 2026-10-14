@@ -61,6 +61,18 @@ ui <- function(id) {
         }
       ")),
       tags$style(shiny::HTML(if (is.null(season)) "" else season$css)),
+      # Plafond d'animation : la couche d'emojis est masquee 10 s apres le
+      # chargement de la page (les animations ne durent jamais plus de 10 s ;
+      # le timer se re-arme a chaque session / rechargement).
+      if (!is.null(season))
+        tags$script(
+          shiny::HTML(
+            paste0(
+              "window.setTimeout(function(){var f=document.querySelector('.lrm-fx');",
+              "if(f){f.style.display='none';}},10000);"
+            )
+          )
+        ),
       theme = bs_theme(
         bootswatch = "flatly",
         #bootswatch = "minty",

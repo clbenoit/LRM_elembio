@@ -37,6 +37,30 @@ nth_sunday <- function(year, month, n) {
   first + (7 - as.integer(format(first, "%u"))) %% 7 + 7 * (n - 1)
 }
 
+#' Nombre de jours d'un mois.
+#'
+#' @param year annee entiere
+#' @param month mois entier (1-12)
+#' @return nombre de jours du mois
+days_in_month <- function(year, month) {
+  prev_first <- as.Date(paste0(year, "-", sprintf("%02d", month), "-01"))
+  next_first <- as.Date(paste0(
+    year + as.integer(month == 12), "-", sprintf("%02d", (month %% 12) + 1), "-01"
+  ))
+  as.integer(next_first - prev_first)
+}
+
+#' Dernier dimanche d'un mois (independant du locale, via %u : 1=lundi .. 7=dimanche).
+#'
+#' @param year annee entiere
+#' @param month mois entier (1-12)
+#' @return Date du dernier dimanche du mois
+last_sunday <- function(year, month) {
+  last_day <- as.Date(paste0(year, "-", sprintf("%02d", month), "-01")) +
+    days_in_month(year, month) - 1
+  last_day - (as.integer(format(last_day, "%u")) %% 7)
+}
+
 #' Table declarative des 11 saisons.
 #'
 #' Chaque definition : priority (la plus haute gagne en cas de chevauchement),
@@ -48,7 +72,7 @@ season_defs <- function() {
   list(
     valentin = list(
       priority = 70, emoji = "❤️", label = "Saint-Valentin",
-      banner = "C'est la Saint-Valentin — bons amours !",
+      banner = "C'est la Saint-Valentin",
       start = fixed("02-12"), end = fixed("02-15"),
       anim = "rise", emojis_fx = c("❤️", "💖")
     ),
@@ -75,24 +99,28 @@ season_defs <- function() {
     meres = list(
       priority = 50, emoji = "💐", label = "Fête des mères",
       banner = "Joyeuse fête des mères !",
-      start = function(date) nth_sunday(y(date), 5, 2) - 1,
-      end   = function(date) nth_sunday(y(date), 5, 2) + 1
+      start = function(date) last_sunday(y(date), 5) - 4,
+      end   = function(date) last_sunday(y(date), 5),
+      anim = "fall", emojis_fx = c("💐")
     ),
     peres = list(
       priority = 50, emoji = "🎩", label = "Fête des pères",
       banner = "Joyeuse fête des pères !",
-      start = function(date) nth_sunday(y(date), 6, 3) - 1,
-      end   = function(date) nth_sunday(y(date), 6, 3) + 1
+      start = function(date) nth_sunday(y(date), 6, 3) - 4,
+      end   = function(date) nth_sunday(y(date), 6, 3),
+      anim = "fall", emojis_fx = c("🎩")
     ),
     vacances = list(
       priority = 60, emoji = "☀️", label = "Vacances d'été",
       banner = "Bonnes vacances !",
-      start = fixed("07-01"), end = fixed("08-31")
+      start = fixed("07-01"), end = fixed("08-31"),
+      anim = "fall", emojis_fx = c("⛱️", "🕶️", "🍹", "🍦")
     ),
     rentree = list(
       priority = 60, emoji = "📚", label = "Rentrée",
       banner = "Bonne rentrée !",
-      start = fixed("09-01"), end = fixed("09-12")
+      start = fixed("09-01"), end = fixed("09-12"),
+      anim = "fall", emojis_fx = c("🎒", "✏️", "📚")
     ),
     halloween = list(
       priority = 70, emoji = "🎃", label = "Halloween",
@@ -104,7 +132,7 @@ season_defs <- function() {
       priority = 80, emoji = "🎄", label = "Noël",
       banner = "Joyeuses fêtes de fin d'année !",
       start = fixed("12-15"), end = fixed("12-26"),
-      anim = "fall", emojis_fx = c("❄️", "🌨️")
+      anim = "fall", emojis_fx = c("❄️", "🎁", "🎅")
     ),
     nouvel_an = list(
       priority = 90, emoji = "🎆", label = "Nouvel An",
@@ -121,6 +149,26 @@ season_defs <- function() {
         as.Date(paste0(target_year, "-01-03"))
       },
       anim = "fall", emojis_fx = c("🎊", "✨", "🎉")
+    ),
+    # ---- Saisons calendaires : plage de 7 j au debut meteorologique de saison
+    # (pas de saison ete : la plage "vacances" 1 juil -> 31 aout couvre la periode)
+    printemps = list(
+      priority = 65, emoji = "🌷", label = "Printemps",
+      banner = "Bienvenue au printemps !",
+      start = fixed("03-01"), end = fixed("03-07"),
+      anim = "fall", emojis_fx = c("🌷", "🌸")
+    ),
+    automne = list(
+      priority = 65, emoji = "🍂", label = "Automne",
+      banner = "C'est l'automne !",
+      start = fixed("09-01"), end = fixed("09-07"),
+      anim = "fall", emojis_fx = c("🍂", "🍁")
+    ),
+    hiver = list(
+      priority = 65, emoji = "❄️", label = "Hiver",
+      banner = "C'est l'hiver !",
+      start = fixed("12-01"), end = fixed("12-07"),
+      anim = "fall", emojis_fx = c("❄️", "⛄")
     )
   )
 }
@@ -143,6 +191,9 @@ season_css <- function(id, banner) {
     peres      = c(nav = "#334155", bbg = "#cbd5e1", bfg = "#1e293b"),
     vacances   = c(nav = "#0369a1", bbg = "#fde047", bfg = "#713f12"),
     rentree    = c(nav = "#1d4ed8", bbg = "#bfdbfe", bfg = "#1e3a8a"),
+    printemps  = c(nav = "#15803d", bbg = "#bbf7d0", bfg = "#14532d"),
+    automne    = c(nav = "#9a3412", bbg = "#fed7aa", bfg = "#7c2d12"),
+    hiver      = c(nav = "#0c4a6e", bbg = "#bae6fd", bfg = "#082f49"),
     halloween  = c(nav = "#2d1b4e", bbg = "#f97316", bfg = "#431407"),
     noel       = c(nav = "#14532d", bbg = "#7f1d1d", bfg = "#fef2f2"),
     nouvel_an  = c(nav = "#111827", bbg = "#fbbf24", bfg = "#451a03")
