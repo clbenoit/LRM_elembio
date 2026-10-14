@@ -72,7 +72,7 @@ season_defs <- function() {
   list(
     valentin = list(
       priority = 70, emoji = "❤️", label = "Saint-Valentin",
-      banner = "C'est la Saint-Valentin",
+      banner = "C'est la Saint-Valentin !",
       start = fixed("02-12"), end = fixed("02-15"),
       anim = "rise", emojis_fx = c("❤️", "💖")
     ),
