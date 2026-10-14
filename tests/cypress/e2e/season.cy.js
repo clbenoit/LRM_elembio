@@ -7,7 +7,7 @@ describe('seasonal ui (LRM_SEASON=noel)', () => {
   })
 
   it('titre de la navbar avec l\'emoji de saison', () => {
-    cy.contains('🎄 LRM_elembio').should('exist')
+    cy.contains('🎄 LRM_CHUGA').should('exist')
   })
 
   it('bandeau de saison (body::after)', () => {

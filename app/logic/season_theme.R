@@ -1,5 +1,5 @@
 # app/logic/season_theme.R
-# Moteur de saisons de l'UI LRM_elembio : selection de la periode de l'annee
+# Moteur de saisons de l'UI LRM_CHUGA : selection de la periode de l'annee
 # active (11 evenements, dates fixes ou calculees) + payload (emoji, bandeau,
 # CSS, spec d'animation). Fonctions pures (pas de Shiny) => testables.
 # L'application cote (titre navbar, style, couche d'animation) est dans app/main.R.
