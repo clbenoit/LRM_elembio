@@ -17,7 +17,7 @@ box::use(
 
 # link_github <- tags$a(
 #   icon("github"),"Code",
-#   href = "https://github.com/clbenoit/LRM_elembio",
+#   href = "https://github.com/clbenoit/LRM_CHUGA",
 #   target = "_blank"
 # )
 # link_doc <- tags$a(
@@ -31,7 +31,7 @@ ui <- function(id) {
   ns <- NS(id)
   bootstrapPage(
     page_navbar(
-      title = "LRM_elembio",
+      title = "LRM_CHUGA",
       tags$style(shiny::HTML("
       .navbar {
           background: linear-gradient(to right, #E40303, #FF8C00, #FFED00, #008026, #004DFF, #750787);
@@ -65,7 +65,8 @@ ui <- function(id) {
                       ns("analysis_name"),
                       label = "Analysis selector", # Traduit: "Sélecteur d'analyse"
                       #choices = c("Myogre", "Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA", "Hedera"),
-                      choices = c("Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA", "Hedera"),
+                      choices = c("Exomes", "TS65/GHEM-FFPE", "Hema_M_L_CHUGA", "Hedera",
+                                   "RNASeq_S5"),
                       selected = "TS65/GHEM-FFPE",
                       width = "100%"
                     )
@@ -122,11 +123,12 @@ server <- function(id) {
     if (get("cache_directory") ==  "default") {
       dir.create(file.path(tempdir, "cache"))
       print(paste0("using following cache directory : ", file.path(tempdir, "cache")))
-      shinyOptions(cache = cache_disk(file.path(tempdir,"cache")))
+      # try() : shinyOptions() ne trouve pas de session sous testServer (shiny 1.10, mock)
+      try(shinyOptions(cache = cache_disk(file.path(tempdir,"cache"))))
     } else {
       print(paste0("using following cache directory : ",
                    get("cache_directory")))
-      shinyOptions(cache = cache_disk(get("cache_directory")))
+      try(shinyOptions(cache = cache_disk(get("cache_directory"))))
     }
     # Set up default user
     if(Sys.getenv("SHINYPROXY_USERNAME") == ""){
@@ -138,6 +140,7 @@ server <- function(id) {
       req(input$analysis_name)
       print("observeer input$analysis_name")
       appDataManager$selectors$analysis_name <- input$analysis_name
+      appDataManager$selectors$num_rows <- input$num_rows
       appDataManager$loadTemplates(analysis_name = appDataManager$selectors$analysis_name)
     })
     observeEvent(input$generate_rows,{
